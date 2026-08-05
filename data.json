@@ -5,6 +5,8 @@
     "expiryDate": "2026/8/15"
   },
   "orderEmail": "shintaro.tanaka@alliq-co.com",
+  "closed": false,
+  "closedMessage": "現在、今月の掲載商品を選定中です。次回の更新まで今しばらくお待ちください。",
   "special": {
     "code": "270459",
     "name": "オーリック オリジナル ブレンデッドモルト 58.1%",
