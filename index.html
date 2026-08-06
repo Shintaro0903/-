@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPIRITS ウイスキーご注文サイト｜株式会社オーリック</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   :root{
     --brown:#3E2723;
@@ -302,6 +303,39 @@
     color:#1D4E89;
     margin-top:6px;
   }
+
+  .closed-panel{
+    display:none;
+    max-width:640px;
+    margin:60px auto;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:44px 32px;
+    text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .closed-panel .icon{
+    width:56px;height:56px;
+    border-radius:50%;
+    background:var(--cream);
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;
+    font-size:26px;
+  }
+  .closed-panel h2{
+    font-size:20px;
+    color:var(--brown);
+    margin:0 0 12px;
+  }
+  .closed-panel p{
+    font-size:14px;
+    color:var(--gray);
+    line-height:1.8;
+    margin:0;
+    white-space:pre-wrap;
+  }
 </style>
 </head>
 <body>
@@ -309,7 +343,7 @@
 <header class="top">
   <div class="top-inner">
     <h1 class="brand">SPIRITS</h1>
-    <div class="issue-info">
+    <div class="issue-info" id="issue-info">
       <div class="no" id="issue-no">-</div>
       <div>希望者多数商品　抽選日：<span id="lottery-date">-</span></div>
       <div>ご注文有効期限：<span id="expiry-date">-</span></div>
@@ -320,6 +354,12 @@
 
 <div id="load-error">
   データの読み込みに失敗しました。<code>data.json</code> の編集内容に入力ミス（カンマや引用符の閉じ忘れなど）がある可能性があります。直前の編集を見直すか、履歴から一つ前のバージョンに戻してください。
+</div>
+
+<div class="closed-panel" id="closed-panel">
+  <div class="icon">🕓</div>
+  <h2 id="closed-title">現在、今月の掲載商品を選定中です</h2>
+  <p id="closed-message"></p>
 </div>
 
 <main id="main-content" style="display:none;">
@@ -339,10 +379,11 @@
       <div class="field"><label>貴店名 <span style="color:#C0392B">*</span></label><input id="f-shop" placeholder="例）〇〇酒店"></div>
       <div class="field"><label>ご担当者様 <span style="color:#C0392B">*</span></label><input id="f-person" placeholder="例）山田 太郎"></div>
       <div class="field"><label>TEL</label><input id="f-tel" placeholder="例）00-0000-0000"></div>
+      <div class="field" id="f-email-field"><label>メールアドレス <span style="color:#C0392B">*</span></label><input id="f-email" type="email" placeholder="例）example@shop.com"></div>
     </div>
     <div class="summary" id="order-summary">選択中の商品はまだありません。上の商品からご注文本数を選んでください。</div>
     <div class="btn-row">
-      <button class="primary" id="btn-send">メールでご注文内容を送信</button>
+      <button class="primary" id="btn-send">ご注文内容を送信</button>
       <button class="secondary" id="btn-copy">注文内容をコピー</button>
     </div>
     <div class="note" id="note-text"></div>
@@ -364,7 +405,14 @@ let ISSUE = {};
 let SPECIAL = {};
 let PRODUCTS = [];
 let ORDER_EMAIL = "";
+let EMAILJS_CONFIG = null;
 const qty = {};
+
+function emailjsReady(){
+  return !!(EMAILJS_CONFIG && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.templateIdShop &&
+    EMAILJS_CONFIG.templateIdCustomer && EMAILJS_CONFIG.publicKey &&
+    typeof window.emailjs !== "undefined");
+}
 
 function yen(n){ return "¥" + n.toLocaleString("ja-JP"); }
 
@@ -470,10 +518,11 @@ function updateSummary(){
   }
 }
 
-function buildOrderText(){
+function buildOrderData(){
   const shop = document.getElementById("f-shop").value.trim();
   const person = document.getElementById("f-person").value.trim();
   const tel = document.getElementById("f-tel").value.trim();
+  const email = document.getElementById("f-email").value.trim();
   const lines = [];
   let total = 0, itemCount = 0;
   Object.values(qty).forEach(item => {
@@ -483,30 +532,72 @@ function buildOrderText(){
       itemCount += item.count;
     }
   });
+  const orderLinesText = lines.length ? lines.join("\n") : "（商品が選択されていません）";
+  return { shop, person, tel, email, orderLinesText, total, itemCount };
+}
+
+function buildMailBodyText(d){
   let body = `SPIRITS ${ISSUE.no || ""} ご注文\n\n`;
-  body += `貴店名：${shop || "（未入力）"}\n`;
-  body += `ご担当者様：${person || "（未入力）"}\n`;
-  body += `TEL：${tel || "（未入力）"}\n\n`;
-  body += `【ご注文内容】\n`;
-  body += lines.length ? lines.join("\n") : "（商品が選択されていません）";
-  body += `\n\n合計本数：${itemCount}本 / 合計金額（税込目安）：${yen(total)}`;
-  return { shop, person, body };
+  body += `貴店名：${d.shop || "（未入力）"}\n`;
+  body += `ご担当者様：${d.person || "（未入力）"}\n`;
+  body += `TEL：${d.tel || "（未入力）"}\n`;
+  body += `メール：${d.email || "（未入力）"}\n\n`;
+  body += `【ご注文内容】\n${d.orderLinesText}`;
+  body += `\n\n合計本数：${d.itemCount}本 / 合計金額（税込目安）：${yen(d.total)}`;
+  return body;
 }
 
 function initEvents(){
-  document.getElementById("btn-send").addEventListener("click", () => {
-    const { shop, person, body } = buildOrderText();
-    if(!shop || !person){
+  const sendBtn = document.getElementById("btn-send");
+  const sendBtnDefaultText = sendBtn.textContent;
+
+  sendBtn.addEventListener("click", () => {
+    const d = buildOrderData();
+    if(!d.shop || !d.person){
       alert("貴店名とご担当者様名をご入力ください。");
       return;
     }
-    const subject = encodeURIComponent(`【ご注文】SPIRITS ${ISSUE.no || ""} - ${shop}`);
-    const mailBody = encodeURIComponent(body);
-    window.location.href = `mailto:${ORDER_EMAIL}?subject=${subject}&body=${mailBody}`;
+
+    if(emailjsReady()){
+      if(!d.email){
+        alert("確認メールをお送りするため、メールアドレスをご入力ください。");
+        return;
+      }
+      const templateParams = {
+        to_email: ORDER_EMAIL,
+        customer_email: d.email,
+        shop_name: d.shop,
+        person_name: d.person,
+        tel: d.tel || "（未入力）",
+        issue_no: ISSUE.no || "",
+        order_lines: d.orderLinesText,
+        total_count: d.itemCount,
+        total_price: yen(d.total),
+      };
+      sendBtn.disabled = true;
+      sendBtn.textContent = "送信中...";
+      Promise.all([
+        window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateIdShop, templateParams, EMAILJS_CONFIG.publicKey),
+        window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateIdCustomer, templateParams, EMAILJS_CONFIG.publicKey),
+      ]).then(() => {
+        alert("ご注文を受け付けました。ご入力いただいたメールアドレスに確認メールをお送りしましたのでご確認ください。");
+      }).catch(err => {
+        console.error(err);
+        alert("送信に失敗しました。お手数ですが「注文内容をコピー」でコピーのうえ、メールまたはお電話（092-731-0296）にてご連絡ください。");
+      }).finally(() => {
+        sendBtn.disabled = false;
+        sendBtn.textContent = sendBtnDefaultText;
+      });
+    } else {
+      const body = buildMailBodyText(d);
+      const subject = encodeURIComponent(`【ご注文】SPIRITS ${ISSUE.no || ""} - ${d.shop}`);
+      const mailBody = encodeURIComponent(body);
+      window.location.href = `mailto:${ORDER_EMAIL}?subject=${subject}&body=${mailBody}`;
+    }
   });
 
   document.getElementById("btn-copy").addEventListener("click", async () => {
-    const { body } = buildOrderText();
+    const body = buildMailBodyText(buildOrderData());
     try{
       await navigator.clipboard.writeText(body);
       alert("注文内容をコピーしました。メールやFAXの本文に貼り付けてお使いください。");
@@ -526,13 +617,33 @@ fetch("data.json?_=" + Date.now())
     SPECIAL = data.special || {};
     PRODUCTS = data.products || [];
     ORDER_EMAIL = data.orderEmail || "";
-
-    document.getElementById("note-text").innerHTML =
-      `※「メールでご注文内容を送信」を押すと、ご入力内容を差し込んだメールの下書きがお使いのメールソフトで開きます。内容をご確認のうえ、そのまま送信してください（送信先：${ORDER_EMAIL}）。<br>` +
-      `※メールソフトが開かない場合は「注文内容をコピー」でテキストをコピーし、メールやFAXにてお送りください。<br>` +
-      `※希望者多数の商品は抽選となる場合があります。抽選に外れた場合のご連絡は致しかねますのでご了承ください。`;
+    EMAILJS_CONFIG = data.emailjs || null;
 
     renderHeader();
+
+    if(data.closed){
+      document.getElementById("issue-info").style.display = "none";
+      const panel = document.getElementById("closed-panel");
+      const msg = data.closedMessage || "現在、今月の掲載商品を選定中です。次回の更新まで今しばらくお待ちください。";
+      document.getElementById("closed-message").textContent = msg;
+      panel.style.display = "block";
+      return;
+    }
+
+    if(emailjsReady()){
+      window.emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+      document.getElementById("note-text").innerHTML =
+        `※「ご注文内容を送信」を押すと、その場でご注文が送信されます。ご入力いただいたメールアドレスに自動で確認メールが届きます。<br>` +
+        `※確認メールが届かない場合は「注文内容をコピー」でテキストをコピーし、メールやFAXにてお送りください。<br>` +
+        `※希望者多数の商品は抽選となる場合があります。抽選に外れた場合のご連絡は致しかねますのでご了承ください。`;
+    } else {
+      document.getElementById("f-email-field").style.display = "none";
+      document.getElementById("note-text").innerHTML =
+        `※「ご注文内容を送信」を押すと、ご入力内容を差し込んだメールの下書きがお使いのメールソフトで開きます。内容をご確認のうえ、そのまま送信してください（送信先：${ORDER_EMAIL}）。<br>` +
+        `※メールソフトが開かない場合は「注文内容をコピー」でテキストをコピーし、メールやFAXにてお送りください。<br>` +
+        `※希望者多数の商品は抽選となる場合があります。抽選に外れた場合のご連絡は致しかねますのでご了承ください。`;
+    }
+
     renderSpecial();
     renderGrid();
     updateSummary();
