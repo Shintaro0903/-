@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPIRITS ウイスキーご注文サイト｜株式会社オーリック</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root{
+    --brown:#3E2723;
+    --badge:#5D4037;
+    --tan:#B08D57;
+    --cream:#FAF7F1;
+    --line:#E4DACB;
+    --price:#9C4A1A;
+    --gray:#6D6259;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+    background:var(--cream);
+    color:#2A2420;
+  }
+  header.top{
+    background:#FFFFFF;
+    border-bottom:1px solid var(--line);
+    padding:18px 20px 14px;
+    position:sticky;
+    top:0;
+    z-index:50;
+  }
+  .top-inner{
+    max-width:980px;
+    margin:0 auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  h1.brand{
+    font-family:"Bookman Old Style",Georgia,serif;
+    font-size:42px;
+    letter-spacing:2px;
+    color:var(--brown);
+    margin:0;
+    font-style:italic;
+    font-weight:700;
+  }
+  .issue-info{
+    text-align:right;
+    font-size:12px;
+    color:var(--gray);
+    line-height:1.6;
+  }
+  .issue-info .no{
+    font-size:20px;
+    font-weight:700;
+    color:var(--tan);
+    font-style:italic;
+  }
+  main{max-width:980px;margin:0 auto;padding:20px 16px 140px;}
+
+  #load-error{
+    display:none;
+    max-width:980px;
+    margin:20px auto;
+    background:#FDECEA;
+    border:1px solid #F5C6C0;
+    color:#7A2E22;
+    border-radius:10px;
+    padding:16px 18px;
+    font-size:13.5px;
+    line-height:1.7;
+  }
+
+  section.intro{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:22px;
+    font-size:13.5px;
+    color:var(--gray);
+    line-height:1.7;
+  }
+  section.intro b{color:var(--brown);}
+
+  .special{
+    background:linear-gradient(160deg,#1c1f20,#2b2624 60%,#3a2f26);
+    border-radius:16px;
+    color:#fff;
+    padding:24px;
+    display:flex;
+    gap:22px;
+    margin-bottom:30px;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
+    flex-wrap:wrap;
+  }
+  .special img{
+    width:160px;
+    max-width:40%;
+    object-fit:contain;
+    border-radius:6px;
+    align-self:center;
+  }
+  .special .body{flex:1;min-width:220px;}
+  .special .eyebrow{
+    font-size:12px;
+    letter-spacing:2px;
+    color:#D8C7A0;
+    margin-bottom:4px;
+  }
+  .special h2{
+    margin:0 0 10px;
+    font-size:24px;
+    line-height:1.3;
+  }
+  .special .specs{font-size:12px;color:#CFC9BE;line-height:1.7;margin-bottom:10px;}
+  .special .price{font-size:22px;font-weight:700;color:#E8A25C;margin-bottom:4px;}
+  .special .code{font-size:11px;color:#B7B0A4;margin-bottom:12px;}
+  .special .desc{font-size:12px;color:#DCD7CD;line-height:1.7;margin-bottom:14px;}
+  .special .qty-row{display:flex;align-items:center;gap:10px;}
+
+  h3.section-title{
+    font-size:16px;
+    color:var(--brown);
+    border-bottom:2px solid var(--brown);
+    display:inline-block;
+    padding-bottom:4px;
+    margin:0 0 16px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+  }
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr;}
+    h1.brand{font-size:34px;}
+    .special{flex-direction:column;}
+    .special img{width:120px;max-width:100%;}
+  }
+
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    display:flex;
+    gap:12px;
+    position:relative;
+  }
+  .badge{
+    position:absolute;
+    top:-8px;
+    left:-8px;
+    width:26px;
+    height:26px;
+    background:var(--badge);
+    color:#fff;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+  .card img{
+    width:88px;
+    height:110px;
+    object-fit:contain;
+    flex-shrink:0;
+  }
+  .card .info{flex:1;min-width:0;}
+  .card .name{font-size:14px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:4px;}
+  .card .code{font-size:10px;color:#A79C8E;margin-bottom:6px;}
+  .card .specs{font-size:11px;color:#5A5044;line-height:1.6;margin-bottom:6px;}
+  .card .specs b{color:var(--brown);}
+  .card .desc{font-size:11px;color:var(--gray);line-height:1.55;margin-bottom:8px;}
+  .card .bottom-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .card .price{font-size:16px;font-weight:700;color:var(--price);}
+
+  .qty{
+    display:flex;
+    align-items:center;
+    border:1px solid var(--line);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .qty button{
+    width:28px;height:28px;
+    border:none;background:var(--cream);
+    color:var(--brown);
+    font-size:16px;
+    cursor:pointer;
+  }
+  .qty button:active{background:var(--line);}
+  .qty input{
+    width:38px;
+    text-align:center;
+    border:none;
+    font-size:14px;
+    -moz-appearance:textfield;
+  }
+  .qty input::-webkit-outer-spin-button,
+  .qty input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+  .order-section{
+    margin-top:34px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+  }
+  .order-section h3{margin-top:0;}
+  .field-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .field{flex:1;min-width:160px;}
+  .field label{display:block;font-size:12px;color:var(--gray);margin-bottom:4px;}
+  .field input{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+  }
+  .summary{
+    font-size:13px;
+    color:var(--gray);
+    background:var(--cream);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:14px;
+    white-space:pre-wrap;
+    min-height:20px;
+  }
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+  button.primary{
+    background:var(--brown);
+    color:#fff;
+    border:none;
+    padding:12px 26px;
+    border-radius:24px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  button.secondary{
+    background:#fff;
+    color:var(--brown);
+    border:1px solid var(--brown);
+    padding:12px 20px;
+    border-radius:24px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .note{font-size:11px;color:#9A9086;margin-top:10px;line-height:1.6;}
+
+  .floatbar{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--brown);
+    color:#fff;
+    padding:12px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 -4px 12px rgba(0,0,0,.2);
+    z-index:60;
+  }
+  .floatbar span{font-size:13px;}
+  .floatbar button{
+    background:var(--tan);
+    color:#2A2420;
+    border:none;
+    padding:9px 18px;
+    border-radius:20px;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+  footer.contact{
+    text-align:center;
+    font-size:12px;
+    color:var(--gray);
+    margin-top:30px;
+    padding-bottom:10px;
+  }
+  footer.contact .allq{
+    font-family:Arial,sans-serif;
+    font-weight:800;
+    font-size:20px;
+    color:#1D4E89;
+    margin-top:6px;
+  }
+
+  .closed-panel{
+    display:none;
+    max-width:640px;
+    margin:60px auto;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:44px 32px;
+    text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .closed-panel .icon{
+    width:56px;height:56px;
+    border-radius:50%;
+    background:var(--cream);
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;
+    font-size:26px;
+  }
+  .closed-panel h2{
+    font-size:20px;
+    color:var(--brown);
+    margin:0 0 12px;
+  }
+  .closed-panel p{
+    font-size:14px;
+    color:var(--gray);
+    line-height:1.8;
+    margin:0;
+    white-space:pre-wrap;
+  }
+
+  .print-btn-row{
+    text-align:right;
+    margin:-8px 0 18px;
+  }
+  .print-btn-row button{
+    background:#fff;
+    color:var(--brown);
+    border:1px solid var(--brown);
+    padding:8px 16px;
+    border-radius:20px;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+
+  #print-root{display:none;}
+
+  @media print{
+    body > *:not(#print-root){display:none !important;}
+    #print-root{display:block !important;}
+    @page{ size:A4; margin:10mm 9mm; }
+  }
+
+  .print-page{
+    page-break-after:always;
+    font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+    color:#2A2420;
+  }
+  .print-page:last-child{page-break-after:auto;}
+
+  .print-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:2px solid var(--brown);
+    padding-bottom:6px;
+    margin-bottom:10px;
+  }
+  .print-brand{
+    font-family:"Bookman Old Style",Georgia,serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:26px;
+    color:var(--brown);
+    margin:0;
+  }
+  .print-issue{
+    font-size:9.5px;
+    color:var(--gray);
+    text-align:right;
+    line-height:1.6;
+  }
+  .print-issue .no{
+    font-size:14px;
+    font-weight:700;
+    color:var(--tan);
+    font-style:italic;
+  }
+
+  .print-special{
+    border:1px solid var(--brown);
+    border-radius:8px;
+    padding:8px 10px;
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+    background:#FBF7EF;
+  }
+  .print-special img{width:64px;height:82px;object-fit:contain;flex-shrink:0;}
+  .print-special .body{flex:1;min-width:0;}
+  .print-special .eyebrow{font-size:9px;color:var(--tan);letter-spacing:1px;margin-bottom:2px;}
+  .print-special .name{font-size:13px;font-weight:700;color:var(--brown);line-height:1.3;margin-bottom:2px;}
+  .print-special .meta{font-size:9px;color:var(--gray);line-height:1.5;margin-bottom:3px;}
+  .print-special .price{font-size:14px;font-weight:700;color:var(--price);}
+  .print-special .code{font-size:8.5px;color:#A79C8E;}
+
+  .print-section-title{
+    font-size:11px;
+    font-weight:700;
+    color:var(--brown);
+    border-bottom:1.5px solid var(--brown);
+    display:inline-block;
+    padding-bottom:2px;
+    margin:0 0 8px;
+  }
+
+  .print-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:6px;
+  }
+  .print-card{
+    border:1px solid #D8CFC0;
+    border-radius:6px;
+    padding:6px 8px;
+    display:flex;
+    gap:6px;
+    font-size:8.8px;
+    position:relative;
+  }
+  .print-card .pbadge{
+    position:absolute;top:-6px;left:-6px;
+    width:16px;height:16px;
+    background:var(--badge);color:#fff;
+    border-radius:4px;font-size:8.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .print-card img{width:38px;height:48px;object-fit:contain;flex-shrink:0;}
+  .print-card .info{flex:1;min-width:0;}
+  .print-card .name{font-size:9.5px;font-weight:700;color:var(--brown);line-height:1.25;margin-bottom:2px;}
+  .print-card .meta{font-size:8px;color:var(--gray);line-height:1.4;margin-bottom:3px;}
+  .print-card .bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;}
+  .print-card .price{font-size:10px;font-weight:700;color:var(--price);}
+  .print-qtybox{
+    border:1px solid #999;border-radius:4px;
+    padding:1px 4px;font-size:9px;white-space:nowrap;
+    min-width:34px;text-align:center;
+  }
+
+  .print-order-form{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:9.5px;
+  }
+  .print-order-form .row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .print-order-form .cell{flex:1;min-width:110px;}
+  .print-order-form .cell .fill-line{
+    border-bottom:1px solid #999;
+    height:14px;
+  }
+  .print-order-form .cell label{font-size:8.5px;color:var(--gray);}
+
+  .print-footer{
+    text-align:center;
+    font-size:9.5px;
+    color:var(--gray);
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <h1 class="brand">SPIRITS</h1>
+    <div class="issue-info" id="issue-info">
+      <div class="no" id="issue-no">-</div>
+      <div>希望者多数商品　抽選日：<span id="lottery-date">-</span></div>
+      <div>ご注文有効期限：<span id="expiry-date">-</span></div>
+      <div>※表示価格はすべて税込価格です。</div>
+    </div>
+  </div>
+</header>
+
+<div id="load-error">
+  データの読み込みに失敗しました。<code>data.json</code> の編集内容に入力ミス（カンマや引用符の閉じ忘れなど）がある可能性があります。直前の編集を見直すか、履歴から一つ前のバージョンに戻してください。
+</div>
+
+<div class="closed-panel" id="closed-panel">
+  <div class="icon">🕓</div>
+  <h2 id="closed-title">現在、今月の掲載商品を選定中です</h2>
+  <p id="closed-message"></p>
+</div>
+
+<main id="main-content" style="display:none;">
+  <section class="intro">
+    <b>株式会社オーリック</b> 毎月のウイスキーご注文サイトです。気になる商品の数量を選んで、ページ下部からご注文内容をお送りください。<br>
+    お電話・FAXでのご注文もこれまで通り受け付けております（FAX 092-752-1004 ／ TEL代表 092-731-0296）。
+  </section>
+
+  <div class="print-btn-row">
+    <button id="btn-print" type="button">🖨 この内容をA4両面で印刷する</button>
+  </div>
+
+  <div class="special" id="special-card"></div>
+
+  <h3 class="section-title">今月のラインナップ</h3>
+  <div class="grid" id="product-grid"></div>
+
+  <div class="order-section">
+    <h3 class="section-title">ご注文内容の送信</h3>
+    <div class="field-row">
+      <div class="field"><label>貴店名 <span style="color:#C0392B">*</span></label><input id="f-shop" placeholder="例）〇〇酒店"></div>
+      <div class="field"><label>ご担当者様 <span style="color:#C0392B">*</span></label><input id="f-person" placeholder="例）山田 太郎"></div>
+      <div class="field"><label>TEL</label><input id="f-tel" placeholder="例）00-0000-0000"></div>
+      <div class="field" id="f-email-field"><label>メールアドレス <span style="color:#C0392B">*</span></label><input id="f-email" type="email" placeholder="例）example@shop.com"></div>
+    </div>
+    <div class="summary" id="order-summary">選択中の商品はまだありません。上の商品からご注文本数を選んでください。</div>
+    <div class="btn-row">
+      <button class="primary" id="btn-send">ご注文内容を送信</button>
+      <button class="secondary" id="btn-copy">注文内容をコピー</button>
+    </div>
+    <div class="note" id="note-text"></div>
+  </div>
+
+  <footer class="contact">
+    お問い合わせは　株式会社オーリック　TEL代表 092-731-0296
+    <div class="allq">ALLIQ</div>
+  </footer>
+</main>
+
+<div class="floatbar" id="floatbar" style="display:none;">
+  <span id="float-count">選択中：0点</span>
+  <button onclick="document.querySelector('.order-section').scrollIntoView({behavior:'smooth'})">ご注文へ進む</button>
+</div>
+
+<div id="print-root"></div>
+
+<script>
+let ISSUE = {};
+let SPECIAL = {};
+let PRODUCTS = [];
+let ORDER_EMAIL = "";
+let EMAILJS_CONFIG = null;
+const qty = {};
+
+function emailjsReady(){
+  return !!(EMAILJS_CONFIG && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.templateIdShop &&
+    EMAILJS_CONFIG.templateIdCustomer && EMAILJS_CONFIG.publicKey &&
+    typeof window.emailjs !== "undefined");
+}
+
+function yen(n){ return "¥" + n.toLocaleString("ja-JP"); }
+
+function renderHeader(){
+  document.getElementById("issue-no").textContent = ISSUE.no || "";
+  document.getElementById("lottery-date").textContent = ISSUE.lotteryDate || "";
+  document.getElementById("expiry-date").textContent = ISSUE.expiryDate || "";
+}
+
+function renderSpecial(){
+  const el = document.getElementById("special-card");
+  el.innerHTML = `
+    <img src="images/${SPECIAL.img}.jpg" alt="${SPECIAL.name}">
+    <div class="body">
+      <div class="eyebrow">今月の特集商品</div>
+      <h2>${SPECIAL.name}</h2>
+      <div class="specs">${SPECIAL.specLines.join("<br>")}</div>
+      <div class="price">${yen(SPECIAL.price)}（税込み）</div>
+      <div class="code">商品CD：${SPECIAL.code}</div>
+      <div class="desc">${SPECIAL.desc}</div>
+      <div class="qty-row">
+        ${qtyControlHtml("s-" + SPECIAL.code)}
+      </div>
+    </div>
+  `;
+  bindQty("s-" + SPECIAL.code, SPECIAL.name, SPECIAL.price);
+}
+
+function qtyControlHtml(id){
+  return `
+    <div class="qty" data-id="${id}">
+      <button class="minus" aria-label="minus">−</button>
+      <input type="number" min="0" value="0" inputmode="numeric">
+      <button class="plus" aria-label="plus">＋</button>
+    </div>
+    <span style="font-size:12px;color:#CFC9BE;">本</span>
+  `;
+}
+
+function renderGrid(){
+  const grid = document.getElementById("product-grid");
+  grid.innerHTML = PRODUCTS.map(p => `
+    <div class="card">
+      <div class="badge">${p.n}</div>
+      <img src="images/${p.img}.jpg" alt="${p.name}">
+      <div class="info">
+        <div class="name">${p.name}</div>
+        <div class="code">商品CD：${p.code}</div>
+        <div class="specs"><b>■産地：</b>${p.origin}　<b>■タイプ：</b>${p.type}　<b>■内容量：</b>${p.vol}</div>
+        <div class="desc">${p.desc}</div>
+        <div class="bottom-row">
+          <div class="price">${yen(p.price)}</div>
+          <div class="qty" data-id="p-${p.code}">
+            <button class="minus">−</button>
+            <input type="number" min="0" value="0" inputmode="numeric">
+            <button class="plus">＋</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  PRODUCTS.forEach(p => bindQty("p-" + p.code, p.name, p.price));
+}
+
+function escapeHtml(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function truncate(s, n){
+  if(!s) return "";
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
+function printCardHtml(p){
+  return `
+    <div class="print-card">
+      <div class="pbadge">${p.n}</div>
+      <img src="images/${p.img}.jpg" alt="">
+      <div class="info">
+        <div class="name">${escapeHtml(p.name)}</div>
+        <div class="meta">${escapeHtml(p.origin)}／${escapeHtml(p.type)}／${escapeHtml(p.vol)}／CD:${escapeHtml(p.code)}</div>
+        <div class="meta">${escapeHtml(truncate(p.desc, 46))}</div>
+        <div class="bottom">
+          <div class="price">${yen(p.price)}</div>
+          <div class="print-qtybox">　　本</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPrintPages(){
+  const root = document.getElementById("print-root");
+  if(!PRODUCTS.length){ root.innerHTML = ""; return; }
+
+  const half = Math.ceil(PRODUCTS.length / 2);
+  const page1Products = PRODUCTS.slice(0, half);
+  const page2Products = PRODUCTS.slice(half);
+
+  const headerHtml = `
+    <div class="print-header">
+      <div class="print-brand">SPIRITS</div>
+      <div class="print-issue">
+        <div class="no">${escapeHtml(ISSUE.no || "")}</div>
+        <div>希望者多数商品　抽選日：${escapeHtml(ISSUE.lotteryDate || "")}</div>
+        <div>ご注文有効期限：${escapeHtml(ISSUE.expiryDate || "")}</div>
+      </div>
+    </div>
+  `;
+
+  const specialHtml = SPECIAL && SPECIAL.name ? `
+    <div class="print-special">
+      <img src="images/${SPECIAL.img}.jpg" alt="">
+      <div class="body">
+        <div class="eyebrow">今月の特集商品</div>
+        <div class="name">${escapeHtml(SPECIAL.name)}</div>
+        <div class="meta">${escapeHtml(truncate((SPECIAL.specLines||[]).join(" / "), 60))}</div>
+        <div class="meta">商品CD：${escapeHtml(SPECIAL.code || "")}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="price">${yen(SPECIAL.price || 0)}（税込）</div>
+          <div class="print-qtybox">　　本</div>
+        </div>
+      </div>
+    </div>
+  ` : "";
+
+  const page1 = `
+    <div class="print-page">
+      ${headerHtml}
+      ${specialHtml}
+      <div class="print-section-title">今月のラインナップ（1/2）</div>
+      <div class="print-grid">${page1Products.map(printCardHtml).join("")}</div>
+    </div>
+  `;
+
+  const page2 = `
+    <div class="print-page">
+      ${headerHtml}
+      <div class="print-section-title">今月のラインナップ（2/2）</div>
+      <div class="print-grid">${page2Products.map(printCardHtml).join("")}</div>
+      <div class="print-order-form">
+        <div class="row">
+          <div class="cell"><label>貴店名</label><div class="fill-line"></div></div>
+          <div class="cell"><label>ご担当者様</label><div class="fill-line"></div></div>
+          <div class="cell"><label>TEL</label><div class="fill-line"></div></div>
+        </div>
+        <div style="font-size:8.5px;color:var(--gray);">
+          ※本紙にご記入のうえ、FAX（092-752-1004）またはお電話（092-731-0296）にてご注文ください。ウェブサイトからもご注文いただけます。
+        </div>
+      </div>
+      <div class="print-footer">株式会社オーリック　TEL代表 092-731-0296　／　FAX 092-752-1004</div>
+    </div>
+  `;
+
+  root.innerHTML = page1 + page2;
+}
+
+function bindQty(id, name, price){
+  qty[id] = { name, price, count: 0 };
+  const wrap = document.querySelector(`.qty[data-id="${id}"]`);
+  if(!wrap) return;
+  const input = wrap.querySelector("input");
+  const minus = wrap.querySelector(".minus");
+  const plus = wrap.querySelector(".plus");
+
+  function set(v){
+    v = Math.max(0, parseInt(v)||0);
+    qty[id].count = v;
+    input.value = v;
+    updateSummary();
+  }
+  minus.addEventListener("click", () => set(qty[id].count - 1));
+  plus.addEventListener("click", () => set(qty[id].count + 1));
+  input.addEventListener("change", () => set(input.value));
+}
+
+function updateSummary(){
+  const lines = [];
+  let total = 0;
+  let itemCount = 0;
+  Object.values(qty).forEach(item => {
+    if(item.count > 0){
+      lines.push(`・${item.name}　${item.count}本　（${yen(item.price)} × ${item.count} = ${yen(item.price*item.count)}）`);
+      total += item.price * item.count;
+      itemCount += item.count;
+    }
+  });
+  const summaryEl = document.getElementById("order-summary");
+  const floatCount = document.getElementById("float-count");
+  floatCount.textContent = `選択中：${itemCount}点`;
+  if(lines.length === 0){
+    summaryEl.textContent = "選択中の商品はまだありません。上の商品からご注文本数を選んでください。";
+  } else {
+    summaryEl.textContent = lines.join("\n") + `\n\n合計本数：${itemCount}本 / 合計金額（税込目安）：${yen(total)}`;
+  }
+}
+
+function buildOrderData(){
+  const shop = document.getElementById("f-shop").value.trim();
+  const person = document.getElementById("f-person").value.trim();
+  const tel = document.getElementById("f-tel").value.trim();
+  const email = document.getElementById("f-email").value.trim();
+  const lines = [];
+  let total = 0, itemCount = 0;
+  Object.values(qty).forEach(item => {
+    if(item.count > 0){
+      lines.push(`・${item.name}　${item.count}本　(${yen(item.price)} × ${item.count} = ${yen(item.price*item.count)})`);
+      total += item.price * item.count;
+      itemCount += item.count;
+    }
+  });
+  const orderLinesText = lines.length ? lines.join("\n") : "（商品が選択されていません）";
+  return { shop, person, tel, email, orderLinesText, total, itemCount };
+}
+
+function buildMailBodyText(d){
+  let body = `SPIRITS ${ISSUE.no || ""} ご注文\n\n`;
+  body += `貴店名：${d.shop || "（未入力）"}\n`;
+  body += `ご担当者様：${d.person || "（未入力）"}\n`;
+  body += `TEL：${d.tel || "（未入力）"}\n`;
+  body += `メール：${d.email || "（未入力）"}\n\n`;
+  body += `【ご注文内容】\n${d.orderLinesText}`;
+  body += `\n\n合計本数：${d.itemCount}本 / 合計金額（税込目安）：${yen(d.total)}`;
+  return body;
+}
+
+function initEvents(){
+  const sendBtn = document.getElementById("btn-send");
+  const sendBtnDefaultText = sendBtn.textContent;
+
+  sendBtn.addEventListener("click", () => {
+    const d = buildOrderData();
+    if(!d.shop || !d.person){
+      alert("貴店名とご担当者様名をご入力ください。");
+      return;
+    }
+
+    if(emailjsReady()){
+      if(!d.email){
+        alert("確認メールをお送りするため、メールアドレスをご入力ください。");
+        return;
+      }
+      const templateParams = {
+        to_email: ORDER_EMAIL,
+        customer_email: d.email,
+        shop_name: d.shop,
+        person_name: d.person,
+        tel: d.tel || "（未入力）",
+        issue_no: ISSUE.no || "",
+        order_lines: d.orderLinesText,
+        total_count: d.itemCount,
+        total_price: yen(d.total),
+      };
+      sendBtn.disabled = true;
+      sendBtn.textContent = "送信中...";
+      Promise.all([
+        window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateIdShop, templateParams, EMAILJS_CONFIG.publicKey),
+        window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateIdCustomer, templateParams, EMAILJS_CONFIG.publicKey),
+      ]).then(() => {
+        alert("ご注文を受け付けました。ご入力いただいたメールアドレスに確認メールをお送りしましたのでご確認ください。");
+      }).catch(err => {
+        console.error(err);
+        alert("送信に失敗しました。お手数ですが「注文内容をコピー」でコピーのうえ、メールまたはお電話（092-731-0296）にてご連絡ください。");
+      }).finally(() => {
+        sendBtn.disabled = false;
+        sendBtn.textContent = sendBtnDefaultText;
+      });
+    } else {
+      const body = buildMailBodyText(d);
+      const subject = encodeURIComponent(`【ご注文】SPIRITS ${ISSUE.no || ""} - ${d.shop}`);
+      const mailBody = encodeURIComponent(body);
+      window.location.href = `mailto:${ORDER_EMAIL}?subject=${subject}&body=${mailBody}`;
+    }
+  });
+
+  document.getElementById("btn-print").addEventListener("click", () => {
+    window.print();
+  });
+
+  document.getElementById("btn-copy").addEventListener("click", async () => {
+    const body = buildMailBodyText(buildOrderData());
+    try{
+      await navigator.clipboard.writeText(body);
+      alert("注文内容をコピーしました。メールやFAXの本文に貼り付けてお使いください。");
+    }catch(e){
+      prompt("コピーができない場合は、下のテキストを手動で選択してコピーしてください。", body);
+    }
+  });
+}
+
+fetch("data.json?_=" + Date.now())
+  .then(res => {
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  })
+  .then(data => {
+    ISSUE = data.issue || {};
+    SPECIAL = data.special || {};
+    PRODUCTS = data.products || [];
+    ORDER_EMAIL = data.orderEmail || "";
+    EMAILJS_CONFIG = data.emailjs || null;
+
+    renderHeader();
+
+    if(data.closed){
+      document.getElementById("issue-info").style.display = "none";
+      const panel = document.getElementById("closed-panel");
+      const msg = data.closedMessage || "現在、今月の掲載商品を選定中です。次回の更新まで今しばらくお待ちください。";
+      document.getElementById("closed-message").textContent = msg;
+      panel.style.display = "block";
+      return;
+    }
+
+    if(emailjsReady()){
+      window.emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+      document.getElementById("note-text").innerHTML =
+        `※「ご注文内容を送信」を押すと、その場でご注文が送信されます。ご入力いただいたメールアドレスに自動で確認メールが届きます。<br>` +
+        `※確認メールが届かない場合は「注文内容をコピー」でテキストをコピーし、メールやFAXにてお送りください。<br>` +
+        `※希望者多数の商品は抽選となる場合があります。抽選に外れた場合のご連絡は致しかねますのでご了承ください。`;
+    } else {
+      document.getElementById("f-email-field").style.display = "none";
+      document.getElementById("note-text").innerHTML =
+        `※「ご注文内容を送信」を押すと、ご入力内容を差し込んだメールの下書きがお使いのメールソフトで開きます。内容をご確認のうえ、そのまま送信してください（送信先：${ORDER_EMAIL}）。<br>` +
+        `※メールソフトが開かない場合は「注文内容をコピー」でテキストをコピーし、メールやFAXにてお送りください。<br>` +
+        `※希望者多数の商品は抽選となる場合があります。抽選に外れた場合のご連絡は致しかねますのでご了承ください。`;
+    }
+
+    renderSpecial();
+    renderGrid();
+    renderPrintPages();
+    updateSummary();
+    initEvents();
+
+    document.getElementById("main-content").style.display = "block";
+    document.getElementById("floatbar").style.display = "flex";
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById("load-error").style.display = "block";
+  });
+</script>
+</body>
+</html>
